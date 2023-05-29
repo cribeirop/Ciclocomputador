@@ -5,13 +5,23 @@
 #include "touch/touch.h"
 #include "arm_math.h"
 #include "../ASF/thirdparty/lvgl8/examples/lv_examples.h"
+#include <math.h>
 
 #define TASK_SIMULATOR_STACK_SIZE (4096 / sizeof(portSTACK_TYPE))
 #define TASK_SIMULATOR_STACK_PRIORITY (tskIDLE_PRIORITY)
 
+#define TASK_VELOCIDADE_STACK_SIZE (4096 / sizeof(portSTACK_TYPE))
+#define TASK_VELOCIDADE_STACK_PRIORITY (tskIDLE_PRIORITY)
+
 #define RAIO 0.508/2
 #define VEL_MAX_KMH  5.0f
 #define VEL_MIN_KMH  0.5f
+
+#define BIKE_PIO		PIOA
+#define BIKE_PIO_ID		ID_PIOA
+#define BIKE_IDX    19
+#define BIKE_IDX_MASK (1 << BIKE_IDX)
+
 //#define RAMP
 
 /************************************************************************/
@@ -64,11 +74,12 @@ lv_obj_t * labelSetValue;
 lv_obj_t * labelClock;
 lv_obj_t * labelTemp;
 lv_obj_t * labelTTemp;
+lv_obj_t * labelVel;
+lv_obj_t * labelAcel;
 static lv_obj_t * labelHome;
 static lv_obj_t * labelCelsius;
 static lv_obj_t * labelRel;
 static lv_obj_t * labelBot;
-
 
 typedef struct  {
 	uint32_t year;
@@ -96,8 +107,10 @@ float kmh_to_hz(float vel, float raio) {
 }
 
 void RTC_init(Rtc *rtc, uint32_t id_rtc, calendar t, uint32_t irq_type);
+int extrairParteFracionaria(float numero, int numDigitos);
 volatile char flag_rtc_alarm;
 volatile int flag_hour = 12, flag_minute = 46, flag_settings, flag_power = 0;
+volatile int flag_vel, flag_acel;
 
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed char *pcTaskName) {
 	printf("stack overflow %x %s\r\n", pxTask, (portCHAR *)pcTaskName);
@@ -298,9 +311,21 @@ void lv_termostato(void) {
 	lv_obj_align(labelBot, LV_ALIGN_TOP_LEFT, 15, 0); // +25 foi pra direita do power, -10, fez ele subir
 	lv_obj_add_style(labelBot, &sbot, 0);
 	lv_label_set_text(labelBot, "a"); //LV_SYMBOL_POWER
-	lv_obj_set_style_text_color(labelClock, lv_color_white(), LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(labelBot, lv_color_white(), LV_STATE_DEFAULT);
 	lv_obj_set_width(labelBot, 60);
 	lv_obj_set_height(labelBot, 60);
+	
+	labelVel = lv_label_create(lv_scr_act());
+	lv_obj_align_to(labelVel, labelBot, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 0);
+	lv_obj_set_style_text_font(labelVel, &dseg30new, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(labelVel, lv_color_white(), LV_STATE_DEFAULT);
+	lv_label_set_text_fmt(labelVel, "");
+	
+// 	labelVel = lv_label_create(lv_scr_act());
+// 	lv_obj_align_to(labelVel, labelBot, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 0);
+// 	lv_obj_set_style_text_font(labelVel, &dseg30new, LV_STATE_DEFAULT);
+// 	lv_obj_set_style_text_color(labelVel, lv_color_white(), LV_STATE_DEFAULT);
+// 	lv_label_set_text_fmt(labelVel, "%02d", (int)flag_vel);
 	
 // #if LV_USE_ARC
 // 	/*Create an Arc*/
@@ -332,6 +357,18 @@ void lv_ex_btn_1(void) {
 /************************************************************************/
 /* TASKS                                                                */
 /************************************************************************/
+
+int extrairParteFracionaria(float numero, int numDigitos) {
+	double parteInteira, parteFracionaria;
+
+	parteFracionaria = modf(numero, &parteInteira);
+
+	int fatorPotencia = pow(10, numDigitos);
+	int parteFracionariaInteiro = (int)(parteFracionaria * fatorPotencia);
+
+	return parteFracionariaInteiro;
+}
+
 static void task_velocidade(void *pvParameters) {
 	rtt_init(RTT, 1);
 	float velocidade_anterior;
@@ -354,13 +391,25 @@ static void task_velocidade(void *pvParameters) {
 			
 			//printf("%f",t);
 			printf("\n\nVelocidade(m/s): %f",velocidade_atual);
+ 			velocidade_atual = velocidade_atual * 3.6;
+			flag_vel = (int) velocidade_atual;
 			printf("\nAceleracao(m/s): %f",aceleracao);
-			printf("\nVelocidade Media(m/s): %f",2*pi*RAIO/t);
+			printf("\nVelocidade Media(m/s): %f",2*PI*RAIO/t);
+			
+// 			double parteInteira, parteFracionaria;
+// 			parteFracionaria = modf(velocidade_atual, &parteInteira);
+// 			int fatorPotencia = pow(10, 3);
+// 			int parteFracionariaInteiro = (int)(parteFracionaria * fatorPotencia);
+				
+			/*labelVel = lv_label_create(lv_scr_act());*/
+// 			lv_obj_align_to(labelVel, labelBot, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 0);
+// 			lv_obj_set_style_text_font(labelVel, &dseg30new, LV_STATE_DEFAULT);
+// 			lv_obj_set_style_text_color(labelVel, lv_color_white(), LV_STATE_DEFAULT);
+			lv_label_set_text_fmt(labelVel, "%d", (flag_vel));			
+			
+			vTaskDelay(1);
 		}
-		
-		//vTaskDelay(1);
 	}
-	
 }
 
 static void task_simulador(void *pvParameters) {
@@ -378,10 +427,10 @@ static void task_simulador(void *pvParameters) {
 		pio_set(PIOC, PIO_PC31);
 #ifdef RAMP
 		if (ramp_up) {
-			printf("[SIMU] ACELERANDO: %d \n", (int) (10*vel));
+// 			printf("[SIMU] ACELERANDO: %d \n", (int) (10*vel));
 			vel += 0.5;
 			} else {
-			printf("[SIMU] DESACELERANDO: %d \n",  (int) (10*vel));
+// 			printf("[SIMU] DESACELERANDO: %d \n",  (int) (10*vel));
 			vel -= 0.5;
 		}
 
@@ -392,7 +441,7 @@ static void task_simulador(void *pvParameters) {
 #endif
 #ifndef RAMP
 		vel = 5;
-		printf("[SIMU] CONSTANTE: %d \n", (int) (10*vel));
+// 		printf("[SIMU] CONSTANTE: %d \n", (int) (10*vel));
 #endif
 		f = kmh_to_hz(vel, RAIO);
 		int t = 965*(1.0/f); //UTILIZADO 965 como multiplicador ao invés de 1000
@@ -643,7 +692,9 @@ int main(void) {
 	if (xTaskCreate(task_simulador, "SIMUL", TASK_SIMULATOR_STACK_SIZE, NULL, TASK_SIMULATOR_STACK_PRIORITY, NULL) != pdPASS) {
 		printf("Failed to create lcd task\r\n");
 	}
-	
+	if (xTaskCreate(task_velocidade, "VEL", TASK_VELOCIDADE_STACK_SIZE, NULL, TASK_VELOCIDADE_STACK_PRIORITY, NULL) != pdPASS) {
+		printf("Failed to create lcd task\r\n");
+	}
 	/* Start the scheduler. */
 	vTaskStartScheduler();
 
