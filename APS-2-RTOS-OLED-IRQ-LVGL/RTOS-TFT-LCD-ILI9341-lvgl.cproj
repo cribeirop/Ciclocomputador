@@ -2296,6 +2296,9 @@
     <Compile Include="src\ASF\thirdparty\lvgl8\tests\unity\unity_support.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\bot.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\cha.c">
       <SubType>compile</SubType>
     </Compile>

@@ -4,6 +4,7 @@
 #include "lvgl.h"
 #include "touch/touch.h"
 #include "arm_math.h"
+#include "../ASF/thirdparty/lvgl8/examples/lv_examples.h"
 
 #define TASK_SIMULATOR_STACK_SIZE (4096 / sizeof(portSTACK_TYPE))
 #define TASK_SIMULATOR_STACK_PRIORITY (tskIDLE_PRIORITY)
@@ -26,9 +27,10 @@ LV_FONT_DECLARE(dsegreg10);
 LV_FONT_DECLARE(clock);
 LV_FONT_DECLARE(clk);
 LV_FONT_DECLARE(cha);
+LV_FONT_DECLARE(bot);
 
-#define LV_HOR_RES_MAX          (320)
-#define LV_VER_RES_MAX          (240)
+#define LV_HOR_RES_MAX          (240)
+#define LV_VER_RES_MAX          (320)
 
 /*A static or global variable to store the buffers*/
 static lv_disp_draw_buf_t disp_buf;
@@ -65,10 +67,7 @@ lv_obj_t * labelTTemp;
 static lv_obj_t * labelHome;
 static lv_obj_t * labelCelsius;
 static lv_obj_t * labelRel;
-static lv_obj_t * labelConf;
-lv_obj_t * labelSet;
-lv_obj_t * labelTmp;
-lv_obj_t * labelTmp;
+static lv_obj_t * labelBot;
 
 
 typedef struct  {
@@ -98,7 +97,7 @@ float kmh_to_hz(float vel, float raio) {
 
 void RTC_init(Rtc *rtc, uint32_t id_rtc, calendar t, uint32_t irq_type);
 volatile char flag_rtc_alarm;
-volatile int flag_hour = 53, flag_minute = 46, flag_settings, flag_power = 0;
+volatile int flag_hour = 12, flag_minute = 46, flag_settings, flag_power = 0;
 
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed char *pcTaskName) {
 	printf("stack overflow %x %s\r\n", pxTask, (portCHAR *)pcTaskName);
@@ -185,19 +184,10 @@ static void down_handler(lv_event_t * e) {
 			flag_minute -= 1;
 		}
 		if (flag_hour < 0) {
-			flag_hour = 59;
+			flag_hour = 23;
 		} else if (flag_minute < 0) {
 			flag_minute = 59;
 		}
-// 		if (flag_minute < 10 && flag_hour < 10) {
-// 			lv_label_set_text_fmt(labelClock, "0%d" ":" "0%d", flag_hour, flag_minute);
-// 			} else if (flag_minute < 10) {
-// 			lv_label_set_text_fmt(labelClock, "%d" ":" "0%d", flag_hour, flag_minute);
-// 			} else if (flag_hour < 10) {
-// 			lv_label_set_text_fmt(labelClock, "0%d" ":" "%d", flag_hour, flag_minute);
-// 			} else {
-// 			lv_label_set_text_fmt(labelClock, "%d" ":" "%d", flag_hour, flag_minute);
-// 		}
 		lv_label_set_text_fmt(labelClock, "%02d" ":" "%02d", flag_hour, flag_minute);
 	}
 	else if(code == LV_EVENT_CLICKED) {
@@ -218,7 +208,7 @@ static void up_handler(lv_event_t * e) {
 		else if(code == LV_EVENT_CLICKED && flag_settings == 2) {
 			flag_minute += 1;
 		}
-		if (flag_hour > 59) {
+		if (flag_hour > 23) {
 			flag_hour = 0;
 		} else if (flag_minute > 59) {
 			flag_minute = 0;
@@ -239,19 +229,20 @@ void lv_termostato(void) {
 	lv_style_set_border_color(&style, lv_palette_main(LV_PALETTE_NONE));
 	lv_style_set_border_width(&style, 5);
 	
+	static lv_style_t sbot;
+// 	lv_style_init(&sbot);
+// 	lv_style_set_bg_color(&sbot, lv_palette_main(LV_PALETTE_NONE));
+// 	lv_style_set_border_color(&sbot, lv_palette_main(LV_PALETTE_NONE));
+// 	lv_style_set_border_width(&sbot, 5);
+	lv_style_set_text_font(&sbot, &bot);
+
+	
 	static lv_style_t sclk;
 	lv_style_init(&sclk);
 	lv_style_set_bg_color(&sclk, lv_palette_main(LV_PALETTE_NONE));
 	lv_style_set_border_color(&sclk, lv_palette_main(LV_PALETTE_NONE));
 	lv_style_set_border_width(&sclk, 5);
 	lv_style_set_text_font(&sclk, &clk);
-	
-	static lv_style_t scha;
-	lv_style_init(&scha);
-	lv_style_set_bg_color(&scha, lv_palette_main(LV_PALETTE_NONE));
-	lv_style_set_border_color(&scha, lv_palette_main(LV_PALETTE_NONE));
-	lv_style_set_border_width(&scha, 5);
-	lv_style_set_text_font(&scha, &cha);
 		
 	lv_obj_t * labelBtn1;
 	lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
@@ -259,43 +250,10 @@ void lv_termostato(void) {
 	lv_obj_align(btn1, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 	lv_obj_add_style(btn1, &style, 0);
 	labelBtn1 = lv_label_create(btn1);
-	lv_label_set_text(labelBtn1, " [ " LV_SYMBOL_POWER); //LV_SYMBOL_POWER
+	lv_label_set_text(labelBtn1, LV_SYMBOL_POWER); //LV_SYMBOL_POWER
 	lv_obj_center(labelBtn1);
 	lv_obj_set_width(btn1, 60);
 	lv_obj_set_height(btn1, 60);
-		
-	lv_obj_t * labelBtn2;
-	lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btn2, event_handler_m, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btn2, btn1, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
-	lv_obj_add_style(btn2, &style, 0);
-	labelBtn2 = lv_label_create(btn2);
-	lv_label_set_text(labelBtn2, "|  M | ");
-	lv_obj_center(labelBtn2);
-	lv_obj_set_width(btn2, 60);
-	lv_obj_set_height(btn2, 60);
-	
-	lv_obj_t * labelBtn3;
-	lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btn3, event_handler_settings, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btn3, btn2, LV_ALIGN_OUT_RIGHT_TOP, 0, 18);
-	lv_obj_add_style(btn3, &sclk, 0);
-	labelBtn3 = lv_label_create(btn3);
-	lv_label_set_text(labelBtn3, "a");
-	lv_obj_center(labelBtn3);
-	lv_obj_set_width(btn3, 30);
-	lv_obj_set_height(btn3, 30);
-		
-	lv_obj_t * labelBtnAA;
-	lv_obj_t * btnAA = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btnAA, event_handler_settings, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btnAA, labelBtn3, LV_ALIGN_OUT_RIGHT_TOP, -1, -23);
-	lv_obj_add_style(btnAA, &style, 0);
-	labelBtnAA = lv_label_create(btnAA);
-	lv_label_set_text(labelBtnAA, " ] ");
-	lv_obj_center(labelBtnAA);
-	lv_obj_set_width(btnAA, 60);
-	lv_obj_set_height(btnAA, 60);
 		
 	lv_obj_t * labelBtn4;
 	lv_obj_t * btn4 = lv_btn_create(lv_scr_act());
@@ -303,7 +261,7 @@ void lv_termostato(void) {
 	lv_obj_align(btn4, LV_ALIGN_BOTTOM_RIGHT, -3, 0);
 	lv_obj_add_style(btn4, &style, 0);
 	labelBtn4 = lv_label_create(btn4);
-	lv_label_set_text(labelBtn4, "  |  " LV_SYMBOL_DOWN " ]");
+	lv_label_set_text(labelBtn4, LV_SYMBOL_DOWN );
 	lv_obj_center(labelBtn4);
 	lv_obj_set_width(btn4, 60);
 	lv_obj_set_height(btn4, 60);
@@ -314,103 +272,43 @@ void lv_termostato(void) {
 	lv_obj_align_to(btn5, btn4, LV_ALIGN_OUT_LEFT_TOP, -35, 0);
 	lv_obj_add_style(btn5, &style, 0);
 	labelBtn5 = lv_label_create(btn5);
-	lv_label_set_text(labelBtn5, "[  " LV_SYMBOL_UP );
+	lv_label_set_text(labelBtn5, LV_SYMBOL_UP );
 	lv_obj_center(labelBtn5);
 	lv_obj_set_width(btn5, 60);
 	lv_obj_set_height(btn5, 60);
-		
-	labelFloor = lv_label_create(lv_scr_act());
-	lv_obj_align(labelFloor, LV_ALIGN_LEFT_MID, 45, -35);
-	lv_obj_set_style_text_font(labelFloor, &dseg70, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelFloor, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelFloor, "%02d", 23);
-		
-	labelFfloor = lv_label_create(lv_scr_act());
-	lv_obj_align_to(labelFfloor, labelFloor, LV_ALIGN_OUT_RIGHT_BOTTOM, 0, 0);
-	lv_obj_set_style_text_font(labelFfloor, &dseg30new, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelFfloor, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelFfloor, ".%d", 4);
-		
-	labelSetValue = lv_label_create(lv_scr_act());
-	lv_obj_align(labelSetValue, LV_ALIGN_RIGHT_MID, -25, -25);
-	lv_obj_set_style_text_font(labelSetValue, &dseg40, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelSetValue, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelSetValue, "%02d", 23);
 	
 	labelClock = lv_label_create(lv_scr_act());
-	lv_obj_align_to(labelClock, labelSetValue, LV_ALIGN_OUT_TOP_MID, -25, -30);
+	lv_obj_align(labelClock, LV_ALIGN_TOP_RIGHT,0, 0);
 	lv_obj_set_style_text_font(labelClock, &dseg30new, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(labelClock, lv_color_white(), LV_STATE_DEFAULT);
 	lv_label_set_text_fmt(labelClock, "%d" ":" "%d", flag_hour, flag_minute);
-		
-	labelTemp = lv_label_create(lv_scr_act());
-	lv_obj_align_to(labelTemp, labelFloor, LV_ALIGN_OUT_LEFT_MID, 10, 0);
-	lv_obj_set_style_text_font(labelTemp, &lv_font_montserrat_10, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelTemp, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelTemp, "FLOOR\nTEMP");
-		
-	labelTTemp = lv_label_create(lv_scr_act());
-	lv_obj_align_to(labelTTemp, labelFloor, LV_ALIGN_OUT_TOP_LEFT, 0, 0);
-	lv_obj_set_style_text_font(labelTTemp, &lv_font_montserrat_10, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelTTemp, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelTTemp, "MON");
-		
-	labelCelsius = lv_label_create(lv_scr_act());
-	lv_obj_align_to(labelCelsius, labelSetValue, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
-	lv_obj_set_style_text_font(labelCelsius, &lv_font_montserrat_10, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelCelsius, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelCelsius, "°C");
-		
-	lv_obj_t * labelHome;
-	lv_obj_t * btnHome = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btnHome, event_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btnHome, btn3, LV_ALIGN_OUT_RIGHT_TOP, 23, -40);
-	lv_obj_add_style(btnHome, &style, 0);
-	labelHome = lv_label_create(btnHome);
-	lv_label_set_text(labelHome, LV_SYMBOL_HOME);
-	lv_obj_center(labelHome);
-	lv_obj_set_width(btnHome, 30);
-	lv_obj_set_height(btnHome, 30);
-		
+	
 	lv_obj_t * labelRel;
 	lv_obj_t * btnRel = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btnRel, event_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btnRel, labelSetValue, LV_ALIGN_OUT_BOTTOM_LEFT, -15, 0);
+	lv_obj_add_event_cb(btnRel, event_handler_settings, LV_EVENT_ALL, NULL);
+	lv_obj_align_to(btnRel, labelBtn1, LV_ALIGN_OUT_RIGHT_TOP, 18, -16); // +25 foi pra direita do power, -10, fez ele subir
 	lv_obj_add_style(btnRel, &sclk, 0);
 	labelRel = lv_label_create(btnRel);
 	lv_label_set_text(labelRel, "a"); //LV_SYMBOL_POWER
 	lv_obj_center(labelRel);
 	lv_obj_set_width(btnRel, 60);
 	lv_obj_set_height(btnRel, 60);
-		
-	lv_obj_t * labelCha;
-	lv_obj_t * btnCha = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btnCha, event_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btnCha, labelRel, LV_ALIGN_OUT_RIGHT_TOP, 0, -20);
-	lv_obj_add_style(btnCha, &scha, 0);
-	labelCha = lv_label_create(btnCha);
-	lv_label_set_text(labelCha, "a"); //LV_SYMBOL_POWER
-	lv_obj_center(labelCha);
-	lv_obj_set_width(btnCha, 60);
-	lv_obj_set_height(btnCha, 60);
-		
-	lv_obj_t * labelConf;
-	lv_obj_t * btnConf = lv_btn_create(lv_scr_act());
-	lv_obj_add_event_cb(btnConf, event_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btnConf, labelSetValue, LV_ALIGN_OUT_LEFT_MID, -10, -25);
-	lv_obj_add_style(btnConf, &style, 0);
-	labelConf = lv_label_create(btnConf);
-	lv_label_set_text(labelConf, LV_SYMBOL_SETTINGS); //LV_SYMBOL_POWER
-	lv_obj_center(labelConf);
-	lv_obj_set_width(btnConf, 30);
-	lv_obj_set_height(btnConf, 30);
-		
-	labelSet = lv_label_create(lv_scr_act());
-	lv_obj_align_to(labelSet, labelConf, LV_ALIGN_OUT_BOTTOM_MID, 12, 0);
-	lv_obj_set_style_text_font(labelSet, &lv_font_montserrat_10, LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(labelSet, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelSet, "MON");
-
+	
+	labelBot = lv_label_create(lv_scr_act());
+	lv_obj_align(labelBot, LV_ALIGN_TOP_LEFT, 15, 0); // +25 foi pra direita do power, -10, fez ele subir
+	lv_obj_add_style(labelBot, &sbot, 0);
+	lv_label_set_text(labelBot, "a"); //LV_SYMBOL_POWER
+	lv_obj_set_style_text_color(labelClock, lv_color_white(), LV_STATE_DEFAULT);
+	lv_obj_set_width(labelBot, 60);
+	lv_obj_set_height(labelBot, 60);
+	
+// #if LV_USE_ARC
+// 	/*Create an Arc*/
+// 	lv_obj_t * arc = lv_arc_create(lv_scr_act());
+// 	lv_arc_set_end_angle(arc, 200);
+// 	lv_obj_set_size(arc, 65, 65);
+// 	lv_obj_align(arc, LV_ALIGN_TOP_LEFT, 3, -3);
+// #endif
 }
 
 void lv_ex_btn_1(void) {
@@ -434,6 +332,37 @@ void lv_ex_btn_1(void) {
 /************************************************************************/
 /* TASKS                                                                */
 /************************************************************************/
+static void task_velocidade(void *pvParameters) {
+	rtt_init(RTT, 1);
+	float velocidade_anterior;
+	while(1){
+		if (!pio_get(BIKE_PIO,PIO_INPUT,BIKE_IDX_MASK)){
+			
+			uint32_t delta_t = rtt_read_timer_value(RTT);
+			rtt_init(RTT,1);
+			//printf("%f",delta_t);
+			float t = (float)delta_t/32768;
+			float f = 1/t;
+			float w = 2*PI*f;
+			float velocidade_atual = w*RAIO;
+			
+			//K = constante opcional(ganho)
+			float K = 1;
+			
+			float aceleracao = K*(velocidade_atual - velocidade_anterior)/delta_t;
+			float velocidade_anterior = velocidade_atual;
+			
+			//printf("%f",t);
+			printf("\n\nVelocidade(m/s): %f",velocidade_atual);
+			printf("\nAceleracao(m/s): %f",aceleracao);
+			printf("\nVelocidade Media(m/s): %f",2*pi*RAIO/t);
+		}
+		
+		//vTaskDelay(1);
+	}
+	
+}
+
 static void task_simulador(void *pvParameters) {
 
 	pmc_enable_periph_clk(ID_PIOC);
@@ -447,7 +376,7 @@ static void task_simulador(void *pvParameters) {
 		pio_clear(PIOC, PIO_PC31);
 		delay_ms(1);
 		pio_set(PIOC, PIO_PC31);
-		#ifdef RAMP
+#ifdef RAMP
 		if (ramp_up) {
 			printf("[SIMU] ACELERANDO: %d \n", (int) (10*vel));
 			vel += 0.5;
@@ -460,16 +389,18 @@ static void task_simulador(void *pvParameters) {
 		ramp_up = 0;
 		else if (vel <= VEL_MIN_KMH)
 		ramp_up = 1;
-		#ifndef RAMP
+#endif
+#ifndef RAMP
 		vel = 5;
 		printf("[SIMU] CONSTANTE: %d \n", (int) (10*vel));
-		#endif
+#endif
 		f = kmh_to_hz(vel, RAIO);
 		int t = 965*(1.0/f); //UTILIZADO 965 como multiplicador ao invés de 1000
 		//para compensar o atraso gerado pelo Escalonador do freeRTOS
 		delay_ms(t);
 	}
 }
+
 static void task_rtc(void *pvParameters) {
 	calendar rtc_initial = {2023, 4, 22, 12, 16, 17, 46};
 	RTC_init(RTC, ID_RTC, rtc_initial, RTC_IER_ALREN);
@@ -497,7 +428,7 @@ static void task_rtc(void *pvParameters) {
 			lv_obj_align(btn1, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 			lv_obj_add_style(btn1, &style, 0);
 			labelBtn1 = lv_label_create(btn1);
-			lv_label_set_text(labelBtn1, " [ " LV_SYMBOL_POWER); //LV_SYMBOL_POWER
+			lv_label_set_text(labelBtn1, LV_SYMBOL_POWER); //LV_SYMBOL_POWER
 			lv_obj_center(labelBtn1);
 			lv_obj_set_width(btn1, 60);
 			lv_obj_set_height(btn1, 60);
@@ -540,82 +471,13 @@ static void task_rtc(void *pvParameters) {
 	}
 }
 
-//TASK RTC
-/*static void task_rtc(void *pvParameters) {
-	calendar rtc_initial = {2023, 4, 22, 12, 16, 17, 46};
-	RTC_init(RTC, ID_RTC, rtc_initial, RTC_IER_ALREN);
-
-	uint32_t current_hour, current_min, current_sec;
-	uint32_t current_year, current_month, current_day, current_week;
-	
-	rtc_get_date(RTC, &current_year, &current_month, &current_day, &current_week);
-	rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-
-	// Set the initial alarm time
-	rtc_set_date_alarm(RTC, 1, current_month, 1, current_day);
-	rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 1);
-
-	 while (1) {
-		 // Wait for the semaphore to be given
-		 xSemaphoreTake(xSemaphoreRTC, portMAX_DELAY);
-
-		 rtc_get_date(RTC, &current_year, &current_month, &current_day, &current_week);
-		 rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-		
-		printf("tchau\n");
-		rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 1);
-// 		// Delay for 2 seconds
-		vTaskDelay(pdMS_TO_TICKS(2000));
-
-		// Get current time
-		rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-
-		// Update RTC alarm to trigger after 2 seconds from the new current second
-		rtc_set_date_alarm(RTC, 1, current_month, 1, current_day);
-		rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 2);
-	}*/
-
-//TASK RTC
-/*static void task_rtc(void *pvParameters) {
-	calendar rtc_initial = {2023, 4, 22, 12, 16, 17, 46};
-	RTC_init(RTC, ID_RTC, rtc_initial, RTC_IER_SECEN);
-
-	uint32_t current_hour, current_min, current_sec;
-	uint32_t current_year, current_month, current_day, current_week;
-	rtc_get_date(RTC, &current_year, &current_month, &current_day, &current_week);
-	rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-
-	uint32_t last_print_time = current_sec;
-
-	while (1) {
-		// Update RTC alarm to trigger after 2 seconds from the current second
-		rtc_set_date_alarm(RTC, 1, current_month, 1, current_day);
-		rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 2);
-
-		printf("oi\n");
-		
-		// Wait for the semaphore to be given
-		xSemaphoreTake(xSemaphoreRTC, portMAX_DELAY);
-
-		printf("tchau\n");
-
-		// Delay for 2 seconds
-		vTaskDelay(pdMS_TO_TICKS(2000));
-
-		// Get current time
-		rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-
-		// Update RTC alarm to trigger after 2 seconds from the new current second
-		rtc_set_date_alarm(RTC, 1, current_month, 1, current_day);
-		rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 2);
-	}*/
-
 static void task_lcd(void *pvParameters) {
 	int px, py;
 
 	//lv_ex_btn_1();
 	lv_termostato();
-	
+	lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLLABLE);
+
 	for (;;)  {
 		lv_tick_inc(50);
 		lv_task_handler();
@@ -727,8 +589,8 @@ void my_input_read(lv_indev_drv_t * drv, lv_indev_data_t*data) {
 	else
 		data->state = LV_INDEV_STATE_RELEASED; 
 	
-	data->point.x = px;
-	data->point.y = py;
+	data->point.x = py;
+	data->point.y = 320 - px;
 }
 
 void configure_lvgl(void) {
@@ -763,6 +625,7 @@ int main(void) {
 
 	/* LCd, touch and lvgl init*/
 	configure_lcd();
+	ili9341_set_orientation(ILI9341_FLIP_Y | ILI9341_SWITCH_XY);
 	configure_touch();
 	configure_lvgl();
 	

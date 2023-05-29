@@ -412,7 +412,30 @@ src/main.d src/main.o: ../src/main.c ../src/asf.h \
  ../src/ASF/thirdparty/lvgl8/src/extra/libs/freetype/../../../lvgl.h \
  ../src/ASF/thirdparty/lvgl8/src/extra/libs/rlottie/lv_rlottie.h \
  ../src/ASF/thirdparty/lvgl8/src/extra/libs/rlottie/../../../lvgl.h \
- ../src/touch/touch.h
+ ../src/touch/touch.h ../src/ASF/thirdparty/CMSIS/Include/arm_math.h \
+ ../src/ASF/thirdparty/CMSIS/Include/core_cm7.h \
+ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\math.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/lv_examples.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/../lvgl.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/styles/lv_example_style.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/get_started/lv_example_get_started.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/widgets/lv_example_widgets.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/layouts/lv_example_layout.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/layouts/flex/lv_example_flex.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/layouts/grid/lv_example_grid.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/scroll/lv_example_scroll.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/anim/lv_example_anim.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/event/lv_example_event.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/others/lv_example_others.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/others/snapshot/lv_example_snapshot.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/lv_example_libs.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/bmp/lv_example_bmp.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/gif/lv_example_gif.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/png/lv_example_png.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/sjpg/lv_example_sjpg.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/qrcode/lv_example_qrcode.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/freetype/lv_example_freetype.h \
+ ../src/config/../ASF/thirdparty/lvgl8/examples/libs/rlottie/lv_example_rlottie.h
 
 ../src/asf.h:
 
@@ -1263,3 +1286,51 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 ../src/ASF/thirdparty/lvgl8/src/extra/libs/rlottie/../../../lvgl.h:
 
 ../src/touch/touch.h:
+
+../src/ASF/thirdparty/CMSIS/Include/arm_math.h:
+
+../src/ASF/thirdparty/CMSIS/Include/core_cm7.h:
+
+c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\math.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/lv_examples.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/../lvgl.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/styles/lv_example_style.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/get_started/lv_example_get_started.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/widgets/lv_example_widgets.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/layouts/lv_example_layout.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/layouts/flex/lv_example_flex.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/layouts/grid/lv_example_grid.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/scroll/lv_example_scroll.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/anim/lv_example_anim.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/event/lv_example_event.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/others/lv_example_others.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/others/snapshot/lv_example_snapshot.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/lv_example_libs.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/bmp/lv_example_bmp.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/gif/lv_example_gif.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/png/lv_example_png.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/sjpg/lv_example_sjpg.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/qrcode/lv_example_qrcode.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/freetype/lv_example_freetype.h:
+
+../src/config/../ASF/thirdparty/lvgl8/examples/libs/rlottie/lv_example_rlottie.h:

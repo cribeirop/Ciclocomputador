@@ -624,6 +624,8 @@ src\ASF\thirdparty\lvgl8\tests\unity\unity.c
 
 src\ASF\thirdparty\lvgl8\tests\unity\unity_support.c
 
+src\bot.c
+
 src\cha.c
 
 src\clk.c
